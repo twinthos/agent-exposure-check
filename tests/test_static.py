@@ -42,8 +42,8 @@ BANNED = [
     "proven",
     "eliminates",
     "illustrative",
-    "813848257",
-    "twinthos@agentmail.to",
+    "8138" + "48257",
+    "twinthos@agentmail" + ".to",
 ]
 
 REQUIRED = [
