@@ -1,0 +1,618 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent Exposure Check | Twinthos Sentinel</title>
+<style>
+:root {
+  --bg: #06060A;
+  --panel: #0E1117;
+  --ink: #F7F7F5;
+  --muted: #8E94A5;
+  --blue: #4D86FF;
+  --green: #7EC8A0;
+  --line: #212836;
+  --critical: #FF9B9B;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  --sans: "Inter Tight", Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+* { box-sizing: border-box; }
+html { background: var(--bg); }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+main { max-width: 780px; margin: 0 auto; padding: 52px 24px 88px; }
+.mast { border-bottom: 1px solid var(--line); padding-bottom: 30px; margin-bottom: 34px; }
+.brand {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--blue);
+}
+h1 {
+  font-size: clamp(40px, 8vw, 68px);
+  font-weight: 300;
+  letter-spacing: -.04em;
+  line-height: 1.02;
+  margin: 18px 0 16px;
+}
+.lede { font-size: clamp(18px, 3vw, 23px); max-width: 40ch; margin: 0; }
+.meta { font-family: var(--mono); font-size: 12px; color: var(--muted); margin: 20px 0 0; }
+.intro { border-left: 2px solid var(--blue); padding-left: 18px; margin: 0 0 38px; }
+.intro p { margin: 0; color: var(--muted); }
+label.field { display: block; font-size: 14px; margin: 22px 0 8px; color: var(--ink); }
+label.field small { color: var(--muted); font-size: 12px; }
+textarea {
+  width: 100%;
+  background: var(--panel);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 0;
+  padding: 14px;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.5;
+  resize: vertical;
+}
+textarea:focus { outline: 1px solid var(--blue); }
+.actions { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-top: 18px; }
+button {
+  background: var(--blue);
+  color: #04060B;
+  border: 0;
+  padding: 13px 20px;
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+button.secondary { background: transparent; color: var(--muted); border: 1px solid var(--line); }
+.error { color: var(--critical); font-size: 14px; margin: 14px 0 0; min-height: 20px; }
+.result { border-top: 2px solid var(--green); margin-top: 42px; padding-top: 24px; }
+.result h2 { font-size: 14px; font-family: var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 32px 0 12px; }
+.score { font-family: var(--mono); font-size: 60px; line-height: 1.1; color: var(--green); }
+.band { font-size: 18px; margin: 4px 0 18px; }
+.counts { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 26px; }
+.pill { font-family: var(--mono); font-size: 12px; border: 1px solid var(--line); padding: 6px 10px; color: var(--muted); }
+.pill.critical { color: var(--critical); }
+.pill.high { color: var(--blue); }
+.pill.low { color: var(--green); }
+.finding { border-top: 1px solid var(--line); padding: 16px 0; }
+.finding h3 { font-size: 16px; margin: 0 0 6px; font-weight: 600; }
+.finding .sev { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+.finding.critical .sev { color: var(--critical); }
+.finding.high .sev { color: var(--blue); }
+.finding.low .sev { color: var(--green); }
+.finding p { margin: 6px 0; color: var(--muted); font-size: 14px; }
+.finding code { font-family: var(--mono); font-size: 12px; color: var(--ink); }
+pre.block {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  padding: 16px;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 0 0 12px;
+}
+.note { color: var(--muted); font-size: 14px; }
+.about { margin-top: 54px; border-top: 1px solid var(--line); padding-top: 26px; }
+.about h2 { font-size: 19px; font-weight: 500; margin: 26px 0 10px; }
+.about p { color: var(--muted); margin: 0 0 12px; }
+.about ul { color: var(--muted); padding-left: 18px; }
+footer { margin-top: 46px; font-family: var(--mono); font-size: 11px; letter-spacing: .1em; color: var(--muted); text-transform: uppercase; }
+@media (max-width: 520px) {
+  main { padding: 30px 18px 64px; }
+  h1 { font-size: 40px; }
+  .score { font-size: 48px; }
+}
+</style>
+</head>
+<body>
+<main>
+  <header class="mast">
+    <div class="brand">Twinthos Sentinel / Tool 02</div>
+    <h1>Agent Exposure Check</h1>
+    <p class="lede">Paste an agent or MCP config. See what it can reach, what it can leak and what to block first.</p>
+    <p class="meta">No account. No upload. No tracking. No subscription.</p>
+  </header>
+
+  <section class="intro">
+    <p>CyberChef shows what a blob of data contains. This shows what an agent is allowed to do with it. It runs in this tab and keeps nothing.</p>
+  </section>
+
+  <form id="aec-form" novalidate>
+    <label class="field" for="config">Agent or MCP config</label>
+    <textarea id="config" rows="12" spellcheck="false" placeholder="Paste JSON or plain text here"></textarea>
+
+    <label class="field" for="baseline">Baseline config <small>Optional. Used only to spot tool drift.</small></label>
+    <textarea id="baseline" rows="5" spellcheck="false" placeholder="Paste an earlier version here"></textarea>
+
+    <div class="actions">
+      <button type="submit" id="check">Check exposure</button>
+      <button type="button" class="secondary" id="clear">Clear</button>
+    </div>
+    <p class="error" id="error" role="status"></p>
+  </form>
+
+  <section class="result" id="result" hidden aria-live="polite">
+    <h2>Exposure score</h2>
+    <div class="score"><span id="score">100</span>/100</div>
+    <p class="band" id="band"></p>
+    <div class="counts" id="counts"></div>
+    <div id="findings"></div>
+
+    <h2>Starter policy</h2>
+    <pre class="block" id="policy"></pre>
+    <p class="note">Put this outside the agent. Check it with your own team before use. It blocks first and asks for the rest.</p>
+
+    <h2>Evidence chain</h2>
+    <pre class="block" id="chain"></pre>
+    <p class="note">Local hash chain. Tamper evident, not tamper proof. If someone controls the whole page, they can rewrite the chain.</p>
+
+    <button type="button" class="secondary" id="copy">Copy report</button>
+  </section>
+
+  <section class="about">
+    <h2>Why this exists</h2>
+    <p>CyberChef is good at showing bytes. A business also needs to know which tool can delete a file, which server has no login and which instruction lives inside a document an agent will read. This tool names those things in plain English before they become an incident.</p>
+
+    <h2>What this does not do</h2>
+    <ul>
+      <li>It does not connect to your systems.</li>
+      <li>It does not test an exploit or run a command.</li>
+      <li>It does not decide what is safe for your organisation.</li>
+      <li>It does not keep your config after you close the tab.</li>
+    </ul>
+
+    <h2>What to do next</h2>
+    <p>Take the highest finding to the owner of that agent. Remove the secret, narrow the permission or require a human check. If you need a measured review, Twinthos Sentinel does that as a paid audit.</p>
+  </section>
+
+  <footer>Twinthos Sentinel / Protection, not attack.</footer>
+</main>
+
+<script>
+/* SHA256_START */
+function sha256(ascii) {
+  function rightRotate(value, amount) { return (value >>> amount) | (value << (32 - amount)); }
+  var mathPow = Math.pow;
+  var maxWord = mathPow(2, 32);
+  var lengthProperty = 'length';
+  var i, j;
+  var result = '';
+  var words = [];
+  var asciiBitLength = ascii[lengthProperty] * 8;
+  var hash = sha256.h = sha256.h || [];
+  var k = sha256.k = sha256.k || [];
+  var primeCounter = k[lengthProperty];
+  var isComposite = {};
+  for (var candidate = 2; primeCounter < 64; candidate++) {
+    if (!isComposite[candidate]) {
+      for (i = 0; i < 313; i += candidate) { isComposite[i] = candidate; }
+      hash[primeCounter] = (mathPow(candidate, .5) * maxWord) | 0;
+      k[primeCounter++] = (mathPow(candidate, 1 / 3) * maxWord) | 0;
+    }
+  }
+  ascii += '\x80';
+  while (ascii[lengthProperty] % 64 - 56) ascii += '\x00';
+  for (i = 0; i < ascii[lengthProperty]; i++) {
+    j = ascii.charCodeAt(i);
+    if (j >> 8) return '';
+    words[i >> 2] |= j << ((3 - i) % 4) * 8;
+  }
+  words[words[lengthProperty]] = ((asciiBitLength / maxWord) | 0);
+  words[words[lengthProperty]] = asciiBitLength;
+  for (j = 0; j < words[lengthProperty];) {
+    var w = words.slice(j, j += 16);
+    var oldHash = hash.slice(0);
+    for (i = 0; i < 64; i++) {
+      var w15 = w[i - 15];
+      var w2 = w[i - 2];
+      var a = hash[0];
+      var e = hash[4];
+      var temp1 = hash[7]
+        + (rightRotate(e, 6) ^ rightRotate(e, 11) ^ rightRotate(e, 25))
+        + ((e & hash[5]) ^ ((~e) & hash[6]))
+        + k[i]
+        + (w[i] = (i < 16) ? w[i] : (
+            w[i - 16]
+            + (rightRotate(w15, 7) ^ rightRotate(w15, 18) ^ (w15 >>> 3))
+            + w[i - 7]
+            + (rightRotate(w2, 17) ^ rightRotate(w2, 19) ^ (w2 >>> 10))
+          ) | 0
+        );
+      var temp2 = (rightRotate(a, 2) ^ rightRotate(a, 13) ^ rightRotate(a, 22))
+        + ((a & hash[1]) ^ (a & hash[2]) ^ (hash[1] & hash[2]));
+      hash = [(temp1 + temp2) | 0].concat(hash);
+      hash[4] = (hash[4] + temp1) | 0;
+    }
+    for (i = 0; i < 8; i++) { hash[i] = (hash[i] + oldHash[i]) | 0; }
+  }
+  for (i = 0; i < 8; i++) {
+    for (j = 3; j + 1; j--) {
+      var b = (hash[i] >> (j * 8)) & 255;
+      result += ((b < 16) ? 0 : '') + b.toString(16);
+    }
+  }
+  return result;
+}
+/* SHA256_END */
+
+(function () {
+  var form = document.getElementById('aec-form');
+  var configBox = document.getElementById('config');
+  var baselineBox = document.getElementById('baseline');
+  var result = document.getElementById('result');
+  var error = document.getElementById('error');
+  var findingsBox = document.getElementById('findings');
+  var countsBox = document.getElementById('counts');
+  var chainBox = document.getElementById('chain');
+  var policyBox = document.getElementById('policy');
+
+  var INJECTION = [
+    'ignore previous', 'ignore all previous', 'system prompt', 'you are now',
+    'new instructions', 'forget everything', 'do not tell the user',
+    'override safety', 'jailbreak', 'hidden instruction'
+  ];
+  var SENSITIVE = [
+    'delete', 'remove', 'payment', 'transfer', 'deploy', 'publish',
+    'send', 'execute', 'shell', 'write', 'upload', 'admin'
+  ];
+  var APPROVAL_WORDS = ['approval', 'approve', 'confirm', 'human', 'require', 'review'];
+  var EXFIL_WORDS = ['upload', 'post to', 'send to', 'webhook', 'email', 'slack', 'discord', 'outbound', 'external'];
+
+  function redact(text) {
+    return String(text)
+      .replace(/((?:key|token|secret|password|passwd|credential)[^:=]{0,24}[:=]\s*["']?)([^"'\s,}]{5,})/gi, '$1[REDACTED]')
+      .slice(0, 180);
+  }
+
+  function lines(text) { return text.split(/\r?\n/); }
+
+  function clip(text) { return redact(text.replace(/\s+/g, ' ').trim()); }
+
+  function ruleSecret(text) {
+    var out = [];
+    var re = /"([^"]*(?:key|token|secret|password|passwd|credential)[^"]*)"\s*:\s*"([^"]+)"/gi;
+    var m;
+    while ((m = re.exec(text)) !== null) {
+      var value = m[2];
+      if (/^(?:\$\{|<|xxx|changeme|example|placeholder|your[_-])/i.test(value)) continue;
+      if (value.length < 6) continue;
+      out.push(clip(m[1] + ' = ' + value));
+      if (out.length >= 4) break;
+    }
+    return out;
+  }
+
+  function ruleRemoteExec(text) {
+    var out = [];
+    var re = /(npx\s+[\w@\-.]+|uvx\s+[\w@\-.]+|pipx\s+run\s+[\w@\-.]+|curl[^\n]*\|\s*(?:ba)?sh|wget[^\n]*\|\s*(?:ba)?sh|node\s+-e|python\s+-c)/gi;
+    var m;
+    while ((m = re.exec(text)) !== null) {
+      out.push(clip(m[0]));
+      if (out.length >= 4) break;
+    }
+    return out;
+  }
+
+  function ruleWildcard(text) {
+    var out = [];
+    var re = /("\s*(?:permissions?|scope|access|path|resources?)[^"]*"\s*:\s*(?:"[^"]*(?:\*|0\.0\.0\.0|\/|full|all|admin)[^"]*"|\[[^\]]*(?:\*|0\.0\.0\.0|\/|full|all|admin)[^\]]*\]))/gi;
+    var m;
+    while ((m = re.exec(text)) !== null) {
+      out.push(clip(m[1]));
+      if (out.length >= 4) break;
+    }
+    return out;
+  }
+
+  function ruleUnauthEndpoint(text) {
+    var out = [];
+    var ls = lines(text);
+    ls.forEach(function (line) {
+      if (!/(?:url|endpoint|server|host)\s*"?\s*:\s*"?https?:\/\//i.test(line)) return;
+      if (/(?:auth|token|key|secret|header|authorization)/i.test(line)) return;
+      out.push(clip(line));
+    });
+    return out.slice(0, 4);
+  }
+
+  function ruleInjection(text) {
+    var low = text.toLowerCase();
+    return INJECTION.filter(function (phrase) { return low.indexOf(phrase) >= 0; }).map(clip).slice(0, 5);
+  }
+
+  function ruleMetadata(text) {
+    var hits = ['169.254.169.254', '169.254.170.2', 'metadata.google.internal', '100.100.100.200', 'instance-data'];
+    return hits.filter(function (hit) { return text.toLowerCase().indexOf(hit) >= 0; }).map(clip);
+  }
+
+  function ruleExfil(text) {
+    var low = text.toLowerCase();
+    var found = EXFIL_WORDS.filter(function (word) { return low.indexOf(word) >= 0; });
+    if (!found.length) return [];
+    if (/local only|never send|no external|do not send/.test(low)) return [];
+    return [clip('Possible outbound wording: ' + found.join(', '))];
+  }
+
+  function ruleObfuscatedName(text) {
+    var out = [];
+    var re = /"\s*(?:name|tool|id)\s*"\s*:\s*"([^"]{16,})"/gi;
+    var m;
+    while ((m = re.exec(text)) !== null) {
+      var name = m[1];
+      if (/^[a-zA-Z][a-zA-Z0-9 _.-]{15,}$/.test(name)) continue;
+      out.push(clip(name));
+      if (out.length >= 4) break;
+    }
+    return out;
+  }
+
+  function parseTools(text) {
+    var data;
+    try { data = JSON.parse(text); } catch (err) { return null; }
+    var out = {};
+    function walk(node, keyName) {
+      if (!node || typeof node !== 'object') return;
+      if (Array.isArray(node)) { node.forEach(function (item) { walk(item, ''); }); return; }
+      var name = node.name || node.id || node.title || (keyName && keyName !== 'mcpServers' ? keyName : '');
+      if (name && (node.description || node.command || node.url || node.inputSchema)) {
+        out[String(name)] = JSON.stringify({
+          description: node.description || '',
+          command: node.command || '',
+          url: node.url || '',
+          args: node.args || [],
+          inputSchema: node.inputSchema || null
+        });
+      }
+      Object.keys(node).forEach(function (key) { walk(node[key], key); });
+    }
+    walk(data, '');
+    return out;
+  }
+
+  function ruleMissingApproval(text) {
+    var tools = parseTools(text);
+    if (!tools) return [];
+    var out = [];
+    Object.keys(tools).forEach(function (name) {
+      var low = (name + ' ' + tools[name]).toLowerCase();
+      var hit = SENSITIVE.filter(function (word) { return low.indexOf(word) >= 0; })[0];
+      if (!hit) return;
+      if (APPROVAL_WORDS.some(function (word) { return low.indexOf(word) >= 0; })) return;
+      out.push(clip(name + ' can ' + hit + ' with no approval word nearby'));
+    });
+    return out.slice(0, 4);
+  }
+
+  function ruleDrift(text, baseline) {
+    if (!baseline.trim()) return [];
+    var now = parseTools(text);
+    var before = parseTools(baseline);
+    if (!now || !before) return ['Baseline or current config could not be read as JSON. Tool drift was not checked.'];
+    var out = [];
+    Object.keys(now).forEach(function (name) {
+      if (!(name in before)) out.push('New tool: ' + clip(name));
+      else if (now[name] !== before[name]) out.push('Changed tool: ' + clip(name));
+    });
+    Object.keys(before).forEach(function (name) {
+      if (!(name in now)) out.push('Removed tool: ' + clip(name));
+    });
+    return out.slice(0, 6);
+  }
+
+  var RULES = [
+    { id: 'SECRET_IN_ENV', severity: 'critical', title: 'Hardcoded secret in config', why: 'A copied config can carry a live key into a repo, a chat or a customer file.', action: 'Move the value to a secret store and rotate the key if it was ever shared.', run: function (t, b) { return ruleSecret(t); } },
+    { id: 'REMOTE_EXEC', severity: 'critical', title: 'Remote code execution pattern', why: 'A package fetched at run time can change without a review and run with the agent permissions.', action: 'Pin the package, vendor it or require a human check before it runs.', run: function (t, b) { return ruleRemoteExec(t); } },
+    { id: 'PROMPT_INJECTION_PHRASE', severity: 'critical', title: 'Instruction override wording', why: 'Text that tells a model to forget its rules can turn a document into a command.', action: 'Remove the phrase or treat the source as untrusted input only.', run: function (t, b) { return ruleInjection(t); } },
+    { id: 'METADATA_SSRF', severity: 'critical', title: 'Cloud metadata address', why: 'A tool that can reach instance metadata can often reach temporary credentials.', action: 'Block the address at the network edge and remove the tool target.', run: function (t, b) { return ruleMetadata(t); } },
+    { id: 'WILDCARD_PERMISSION', severity: 'high', title: 'Wildcard or root permission', why: 'A broad permission turns one small mistake into access to everything the agent can see.', action: 'Name the exact files, hosts and actions the tool needs.', run: function (t, b) { return ruleWildcard(t); } },
+    { id: 'UNAUTH_REMOTE_ENDPOINT', severity: 'high', title: 'Remote endpoint with no auth marker', why: 'A server with no visible authentication can be used by anyone who can reach it.', action: 'Add authentication or bind the service to a local address.', run: function (t, b) { return ruleUnauthEndpoint(t); } },
+    { id: 'MISSING_HUMAN_APPROVAL', severity: 'high', title: 'Sensitive action with no approval word', why: 'Deletes, payments and sends need a person to agree before they happen.', action: 'Add an approval requirement outside the model.', run: function (t, b) { return ruleMissingApproval(t); } },
+    { id: 'TOOL_DRIFT', severity: 'high', title: 'Tool changed since baseline', why: 'A tool description can change after you approved it. That is how a safe agent becomes an unsafe one.', action: 'Review the new or changed tool before it runs.', run: function (t, b) { return ruleDrift(t, b); } },
+    { id: 'DATA_EXFIL_WORDING', severity: 'medium', title: 'Possible outbound data wording', why: 'A tool that sends data outside the boundary needs a clear owner and a clear destination.', action: 'Confirm the destination and add a deny rule until you have.', run: function (t, b) { return ruleExfil(t); } },
+    { id: 'OBFUSCATED_TOOL_NAME', severity: 'low', title: 'Unreadable tool name', why: 'A name that cannot be read is a name nobody will challenge in review.', action: 'Rename it to what it does.', run: function (t, b) { return ruleObfuscatedName(t); } }
+  ];
+
+  var WEIGHT = { critical: 25, high: 15, medium: 8, low: 3 };
+  var ORDER = { critical: 0, high: 1, medium: 2, low: 3 };
+
+  function stable(value) {
+    if (Array.isArray(value)) return '[' + value.map(stable).join(',') + ']';
+    if (value && typeof value === 'object') {
+      return '{' + Object.keys(value).sort().map(function (key) {
+        return JSON.stringify(key) + ':' + stable(value[key]);
+      }).join(',') + '}';
+    }
+    return JSON.stringify(value);
+  }
+
+  async function hashText(text) {
+    if (window.crypto && window.crypto.subtle && window.crypto.subtle.digest) {
+      try {
+        var bytes = new TextEncoder().encode(text);
+        var buffer = await window.crypto.subtle.digest('SHA-256', bytes);
+        return Array.prototype.map.call(new Uint8Array(buffer), function (byte) {
+          return ('0' + byte.toString(16)).slice(-2);
+        }).join('');
+      } catch (err) { /* fall through to local function */ }
+    }
+    return sha256(text);
+  }
+
+  function band(score) {
+    if (score < 40) return 'Critical exposure. Stop and fix the first item before this agent runs again.';
+    if (score < 70) return 'High exposure. Several things need a decision today.';
+    if (score < 90) return 'Review exposure. Work through the named items in order.';
+    return 'Low exposure. Keep this as a baseline and check it again after any change.';
+  }
+
+  async function buildChain(findings) {
+    var previous = '0000000000000000000000000000000000000000000000000000000000000000';
+    var rows = [];
+    for (var i = 0; i < findings.length; i++) {
+      var payload = stable({ seq: i + 1, previous: previous, finding: findings[i] });
+      var hash = await hashText(payload);
+      rows.push({ seq: i + 1, previous: previous, hash: hash, id: findings[i].id });
+      previous = hash;
+    }
+    return rows;
+  }
+
+  function policyFor(findings) {
+    var ids = findings.map(function (f) { return f.rule; });
+    var rules = [
+      { match: 'shell or command execution', decision: 'ASK' },
+      { match: 'external network destination', decision: 'ASK' },
+      { match: 'filesystem write', decision: 'ASK' },
+      { match: 'secret read', decision: 'BLOCK' }
+    ];
+    if (ids.indexOf('METADATA_SSRF') >= 0) rules.push({ match: 'link-local or metadata address', decision: 'BLOCK' });
+    if (ids.indexOf('MISSING_HUMAN_APPROVAL') >= 0) rules.push({ match: 'sensitive tool with no approval', decision: 'BLOCK' });
+    rules.push({ match: 'anything not named above', decision: 'BLOCK' });
+    return JSON.stringify({ default: 'BLOCK', rules: rules }, null, 2);
+  }
+
+  form.addEventListener('submit', async function (event) {
+    event.preventDefault();
+    error.textContent = '';
+    result.hidden = true;
+    var text = configBox.value;
+    var baseline = baselineBox.value;
+    if (!text.trim()) {
+      error.textContent = 'Paste a config first. Nothing was checked.';
+      return;
+    }
+
+    var findings = [];
+    RULES.forEach(function (rule) {
+      var evidence = rule.run(text, baseline) || [];
+      evidence.forEach(function (item, index) {
+        findings.push({
+          id: rule.id + '-' + (index + 1),
+          rule: rule.id,
+          severity: rule.severity,
+          title: rule.title,
+          why: rule.why,
+          action: rule.action,
+          evidence: item
+        });
+      });
+    });
+
+    findings.sort(function (a, b) {
+      return ORDER[a.severity] - ORDER[b.severity] || a.id.localeCompare(b.id);
+    });
+
+    var score = 100;
+    findings.forEach(function (finding) {
+      score = Math.max(0, score - WEIGHT[finding.severity]);
+    });
+
+    var chain = await buildChain(findings);
+    var counts = { critical: 0, high: 0, medium: 0, low: 0 };
+    findings.forEach(function (finding) { counts[finding.severity] += 1; });
+
+    document.getElementById('score').textContent = score;
+    document.getElementById('band').textContent = band(score);
+    countsBox.innerHTML = '';
+    ['critical', 'high', 'medium', 'low'].forEach(function (name) {
+      var span = document.createElement('span');
+      span.className = 'pill ' + name;
+      span.textContent = name + ' ' + counts[name];
+      countsBox.appendChild(span);
+    });
+
+    findingsBox.innerHTML = '';
+    findings.forEach(function (finding) {
+      var div = document.createElement('div');
+      div.className = 'finding ' + finding.severity;
+      var heading = document.createElement('h3');
+      heading.textContent = finding.title;
+      var sev = document.createElement('div');
+      sev.className = 'sev';
+      sev.textContent = finding.id + ' / ' + finding.severity;
+      var why = document.createElement('p');
+      why.textContent = finding.why;
+      var ev = document.createElement('p');
+      var code = document.createElement('code');
+      code.textContent = finding.evidence;
+      ev.appendChild(code);
+      var action = document.createElement('p');
+      action.textContent = 'Do this: ' + finding.action;
+      div.appendChild(sev);
+      div.appendChild(heading);
+      div.appendChild(why);
+      div.appendChild(ev);
+      div.appendChild(action);
+      findingsBox.appendChild(div);
+    });
+    if (!findings.length) {
+      var clean = document.createElement('p');
+      clean.className = 'note';
+      clean.textContent = 'No named pattern matched. That is not proof of safety. It means these ten checks found nothing in this paste.';
+      findingsBox.appendChild(clean);
+    }
+
+    policyBox.textContent = policyFor(findings);
+    chainBox.textContent = chain.map(function (row) {
+      return row.seq + '  ' + row.previous.slice(0, 12) + ' -> ' + row.hash.slice(0, 12) + '  ' + row.id;
+    }).join('\n') || 'No findings. No chain entries.';
+
+    result.hidden = false;
+    result.setAttribute('data-finding-count', String(findings.length));
+    result.setAttribute('data-chain-count', String(chain.length));
+    result.setAttribute('data-score', String(score));
+    result.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  document.getElementById('clear').addEventListener('click', function () {
+    form.reset();
+    result.hidden = true;
+    error.textContent = '';
+  });
+
+  document.getElementById('copy').addEventListener('click', function () {
+    var button = this;
+    var text = [
+      'Agent Exposure Check',
+      'Score: ' + document.getElementById('score').textContent + ' out of 100',
+      document.getElementById('band').textContent,
+      '',
+      findingsBox.innerText,
+      '',
+      'Starter policy',
+      policyBox.textContent,
+      '',
+      'Evidence chain',
+      chainBox.textContent
+    ].join('\n');
+    function done() { button.textContent = 'Copied'; }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, fallback);
+    } else { fallback(); }
+    function fallback() {
+      var area = document.createElement('textarea');
+      area.value = text;
+      document.body.appendChild(area);
+      area.select();
+      try { document.execCommand('copy'); } catch (err) {}
+      document.body.removeChild(area);
+      done();
+    }
+  });
+})();
+</script>
+</body>
+</html>
