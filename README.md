@@ -1,5 +1,9 @@
 # Agent Exposure Check
 
+[![static gate](https://github.com/twinthos/agent-exposure-check/actions/workflows/static.yml/badge.svg)](https://github.com/twinthos/agent-exposure-check/actions/workflows/static.yml)
+
+[Live demo](https://twinthos.github.io/agent-exposure-check/)
+
 Paste an agent or MCP config. See what it can reach, what it can leak and what to block first.
 
 Built by Twinthos Sentinel. Runs in one browser tab. No account. No upload. No tracking. No subscription.
